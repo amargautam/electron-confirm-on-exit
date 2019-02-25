@@ -1,5 +1,5 @@
 // Modules to control application life and create native browser window
-const {app, BrowserWindow} = require('electron')
+const {app, BrowserWindow, dialog} = require('electron')
 
 // Keep a global reference of the window object, if you don't, the window will
 // be closed automatically when the JavaScript object is garbage collected.
@@ -35,13 +35,40 @@ function createWindow () {
 // Some APIs can only be used after this event occurs.
 app.on('ready', createWindow)
 
+// This function shows a dialoge box to confirm
+// the user to quit the app. If the user confirms
+// to quit, it gracefully passes before-quit event
+// to will-quit. If the user choses to not quit,
+// it prevents the exit of the app and keeps the window active.
+//
+// Note: On macOS, this only works when the user does Cmd+Q or Menu > Quit
+function confirmAndQuit(e) {
+  // dialog options
+  const messageBoxOptions = {
+    type: 'question',
+    buttons: ['Cancel', 'Quit'],
+    title: 'This will quit the app',
+    message: 'Are you sure to quit?',
+  };
+  //show the dialog
+  dialog.showMessageBox(null, messageBoxOptions, response => {
+    // If user chooses to not exit
+    if(response == 0) {
+      // Prevents the exit and keeps the window active
+      e.preventDefault();
+    } else {
+      // If the user choses to quit, do nothing. 
+      // will-quit event will trigger to be handled differently
+      app.quit()
+    }
+  });
+}
+
 // Quit when all windows are closed.
-app.on('window-all-closed', function () {
+app.on('window-all-closed', function (e) {
   // On macOS it is common for applications and their menu bar
   // to stay active until the user quits explicitly with Cmd + Q
-  if (process.platform !== 'darwin') {
-    app.quit()
-  }
+  confirmAndQuit(e)
 })
 
 app.on('activate', function () {
